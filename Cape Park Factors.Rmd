@@ -1,0 +1,61 @@
+---
+title: "CCBL Park Factors"
+author: "Jack Byrne"
+date: "5/18/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+CCBL Park Factors calculated based on Baseball Reference park factors calculation method: https://www.baseball-reference.com/about/parkadjust.shtml
+
+```{r init}
+library(dplyr)
+library(knitr)
+setwd("C:/Users/Jack/Desktop/School Stuff/Gatemen Baseball/Park Factors")
+df <- read.csv("ccbl-park-factors.csv")
+teams <- unique(df$Home)
+```
+
+
+```{r fun}
+parkFactor <- function(team){
+
+home <- filter(df, Home == team)
+home <- mutate(home, win = ifelse(Score.1 > Score, 1, 0))
+road <- filter(df, Away == team)
+road <- mutate(road, win = ifelse(Score.1 < Score, 1, 0))
+
+num = (sum(home$Score.1)+sum(home$Score))/nrow(home)
+denom = (sum(road$Score.1)+sum(road$Score))/nrow(road)
+
+pf = (num/denom)
+
+ipc = (18.5 - sum(home$win)/nrow(home)) / (18.5 - sum(road$win)/nrow(road))
+
+pf2 = pf/ipc
+
+opc = 10/(9+pf2)
+
+pf3 = (pf2*opc)
+
+sol = pf3*100
+
+return(sol)
+}
+```
+
+```{r out}
+final = data.frame(0,0)
+colnames(final) <- c("Team", "Park Factor")
+j = 1
+for (i in unique(df$Home)){
+  final[j, 1] = i
+  final[j, 2] = round(parkFactor(i),2)
+  j = j+1
+}
+
+kable(final)
+```
